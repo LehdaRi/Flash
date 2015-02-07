@@ -15,7 +15,7 @@ namespace Fourier {
     void invDFT(const float* amp, const float* phase, float* dest, unsigned size, bool printTime);
 
     template <typename T>
-	void FFT(const T* src, std::complex<float>* out, unsigned size, bool printTime, unsigned stride) {
+	void FFT(const T* src, std::complex<float>* out, size_t size, bool printTime, size_t stride) {
         std::chrono::steady_clock::time_point start, end;
 
         if (printTime)

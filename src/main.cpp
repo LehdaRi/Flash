@@ -9,9 +9,7 @@
 
 /*
 TODO
-
-- Paddaa lähimpään kakkosen potenssiin
-- Graafifunktio inteille
+-
 */
 
 sf::VertexArray getGraph(const float* signal, unsigned size, unsigned xstart, unsigned ystart, float xscale, float yscale) {
@@ -27,63 +25,62 @@ sf::VertexArray getGraph(const float* signal, unsigned size, unsigned xstart, un
     return signalGraph;
 }
 
+
 class ChunkRecorder: public sf::SoundRecorder
 {
     std::vector<sf::Int16> samples;
     sf::Mutex mutex;
 
-    virtual bool onStart() // optional
-    {
-        return true;
-    }
-
     virtual bool onProcessSamples(const sf::Int16* samples, std::size_t sampleCount)
     {
+        /*
+        Copies received samples to a vector. Thread safe.
+        */
+
         sf::Lock lock(this->mutex);
         this->samples.resize(sampleCount);
         std::copy(samples, samples+sampleCount, this->samples.begin());
         return true;
     }
 
-    virtual void onStop() // optional
-    {
-        // clean up whatever has to be done after the capture is finished
-    }
-
 public:
 
     std::vector<sf::Int16> getChunk() {
+        /*
+        Returns a vector of audio samples. Thread safe.
+        */
+
         sf::Lock lock(this->mutex);
         return this->samples;
     }
 };
 
-int main(void) {
 
+int main(void) {
+    // Create an SFML window
     sf::RenderWindow window(sf::VideoMode(1024, 800), "SFML window");
     window.setFramerateLimit(60);    
 
-    // Vectors
+    // Vectors for samples, F-transform, and spectrums
+    std::vector<sf::Int16> samplesVect;
     std::vector<std::complex<float>> chunkFourierVect(0);
     std::vector<float> chunkAmpSpectVect(0);
     std::vector<float> chunkPhaseSpectVect(0);
+    sf::VertexArray chunkAmpSpectGraph;
 
-    // Pointers to beginning of vectors
-    std::complex<float>* chunkFourier;
+    // Pointers to the vectors for C-style array indexing
     sf::Int16* samples;
+    std::complex<float>* chunkFourier;
     float* chunkAmpSpect;
     float* chunkPhaseSpect;
-    float* inverse;
 
     // Other variables
     std::size_t chunkSize;
-    unsigned paddedChunkSize;
-    std::vector<float> inverseVect;
+    std::size_t paddedChunkSize;
 
     // Start recording
     ChunkRecorder recorder;
     recorder.start(16385);
-    //recorder.start(1024);
 
     while (window.isOpen())
     {
@@ -91,47 +88,42 @@ int main(void) {
         sf::Event event;
         while (window.pollEvent(event))
         {
-           // Request for closing the window
+           // Window close request
            if (event.type == sf::Event::Closed)
                window.close();
         }
 
-        auto samplesVect = recorder.getChunk();
+        samplesVect = recorder.getChunk(); // Get a chunk of samples from the mic
         chunkSize = samplesVect.size();
-        paddedChunkSize = pow(2, ceil(log2(chunkSize))); // Round to next highest power of 2
+        paddedChunkSize = pow(2, ceil(log2(chunkSize))); // Round to next highest power of 2 for added granularity
 
-        //std::cout << chunkSize << " " << paddedChunkSize << std::endl;
         if(chunkSize > 0) {
-            samplesVect.resize(paddedChunkSize, 0);
-            samples = &samplesVect[0];
-
+            // Resize vectors
+            samplesVect.resize(paddedChunkSize, 0); // This MUST be padded with zeroes!
             chunkFourierVect.resize(paddedChunkSize);
-            chunkFourier = &chunkFourierVect[0];
-
             chunkAmpSpectVect.resize(paddedChunkSize);
             chunkPhaseSpectVect.resize(paddedChunkSize);
+
+            // Create pointers
+            samples = &samplesVect[0];
+            chunkFourier = &chunkFourierVect[0];
             chunkAmpSpect = &chunkAmpSpectVect[0];
             chunkPhaseSpect = &chunkPhaseSpectVect[0];
 
+            // Do the F-transform
             Fourier::FFT(samples, chunkFourier, paddedChunkSize, false, 1);
+            /*
+            Get amplitudes and phases for each sinusoid. Because of symmetry, we can discard the second half.
+            Zooming to the first fourth reveals the interesting stuff.
+            */
             Fourier::getSpectrum(chunkFourier, chunkAmpSpect, chunkPhaseSpect, paddedChunkSize/4);
 
-            /*inverseVect.resize(1024);
-            inverse = &inverseVect[0];
-            Fourier::invDFT(chunkAmpSpect, chunkPhaseSpect, inverse, paddedChunkSize, false);*/
+            // Get the graph
+            chunkAmpSpectGraph = getGraph(chunkAmpSpect, paddedChunkSize, 0, 750, 2.0f, 0.0001f);
 
-            auto chunkAmpSpectGraph = getGraph(chunkAmpSpect, paddedChunkSize, 0, 750, 2.0f, 0.0001f);
-            //auto inverseGraph = getGraph(inverse, 1024, 0, 500, 1.0f, 1.0f);
-            //auto phasePhaseSpectGraph = getGraph(chunkPhaseSpect, paddedChunkSize, 0, 300, 1.0f, 100.0f);
-
-            for(auto val : chunkFourierVect) {
-                //std::cout << val << std::endl;
-            }
+            // Draw
             window.clear();
-
             window.draw(chunkAmpSpectGraph);
-            //window.draw(inverseGraph);
-            //makewindow.draw(invSignalGraph);
         }
 
         window.display();
