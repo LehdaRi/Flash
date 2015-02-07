@@ -2,6 +2,7 @@
 
 #include <SFML/Graphics.hpp>
 #include <cmath>
+#include <complex>
 
 
 sf::VertexArray getGraph(const float* signal,
@@ -38,13 +39,12 @@ int main(void) {
     auto signalGraph = getGraph(signal, signalSize, 0, 100, 1.0f, 25.0f);
 
     //  Signal spectri
-    float* signalFourierRe = new float[signalSize];
-    float* signalFourierImg = new float[signalSize];
+    compf signalFourier[signalSize];
     float* signalAmpSpectrum = new float[signalSize];
     float* signalPhaseSpectrum = new float[signalSize];
-    Fourier::FFT(signal, signalFourierRe, signalFourierImg, signalSize, true, 1);
-    //Fourier::DFT(signal, signalFourierRe, signalFourierImg, signalSize, true);
-    Fourier::getSpectrum(signalFourierRe, signalFourierImg, signalAmpSpectrum, signalPhaseSpectrum, signalSize);
+    Fourier::FFT(signal, signalFourier, signalSize, true, 1);
+    //Fourier::DFT(signal, signalFourier, signalSize, true);
+    Fourier::getSpectrum(signalFourier, signalAmpSpectrum, signalPhaseSpectrum, signalSize);
     auto signalAmpSpectrumGraph = getGraph(signalAmpSpectrum, signalSize, 0, 300, 1.0f, 100.0f);
     auto signalPhaseSpectrumGraph = getGraph(signalPhaseSpectrum, signalSize, 0, 400, 1.0f, 5.0f);
 
