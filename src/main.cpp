@@ -80,7 +80,7 @@ int main(void) {
 
     // Start recording
     ChunkRecorder recorder;
-    recorder.start(16385);
+    recorder.start(16385); // 16385
 
     while (window.isOpen())
     {
@@ -98,6 +98,7 @@ int main(void) {
         paddedChunkSize = pow(2, ceil(log2(chunkSize))); // Round to next highest power of 2 for added granularity
 
         if(chunkSize > 0) {
+
             // Resize vectors
             samplesVect.resize(paddedChunkSize, 0); // This MUST be padded with zeroes!
             chunkFourierVect.resize(paddedChunkSize);
@@ -116,10 +117,10 @@ int main(void) {
             Get amplitudes and phases for each sinusoid. Because of symmetry, we can discard the second half.
             Zooming to the first fourth reveals the interesting stuff.
             */
-            Fourier::getSpectrum(chunkFourier, chunkAmpSpect, chunkPhaseSpect, paddedChunkSize/4);
+            Fourier::getSpectrum(chunkFourier, chunkAmpSpect, chunkPhaseSpect, paddedChunkSize/2, true);
 
             // Get the graph
-            chunkAmpSpectGraph = getGraph(chunkAmpSpect, paddedChunkSize, 0, 750, 2.0f, 0.0001f);
+            chunkAmpSpectGraph = getGraph(chunkAmpSpect, paddedChunkSize, 0, 750, 1.0f, 4.0f);
 
             // Draw
             window.clear();

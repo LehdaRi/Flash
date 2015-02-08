@@ -25,10 +25,11 @@ void Fourier::DFT(const float* src, compf* output, unsigned size, bool printTime
     std::cout << "Calculating DFT took " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() << " ms" << std::endl;
 }
 
-void Fourier::getSpectrum(const compf* fourier, float* amp, float* phase, unsigned size) {
+void Fourier::getSpectrum(const compf* fourier, float* amp, float* phase, unsigned size, bool logarithmic) {
     for (auto k=0u; k<size; ++k) {
-        amp[k] = std::norm(fourier[k]) / float(size);
+        amp[k] = logarithmic ? 10*log10(pow((std::norm(fourier[k]) / size), 2) / pow(1, 2)) : std::norm(fourier[k]) / float(size);
         phase[k] = std::arg(fourier[k]);
+
     }
 }
 

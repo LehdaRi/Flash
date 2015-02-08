@@ -11,7 +11,7 @@ typedef std::complex<float> compf;
 namespace Fourier {
 
     void DFT(const float* src, compf* output, unsigned size, bool printTime = false);
-    void getSpectrum(const compf* fourier, float* amp, float* phase, unsigned size);
+    void getSpectrum(const compf* fourier, float* amp, float* phase, unsigned size, bool logarithmic = false);
     void invDFT(const float* amp, const float* phase, float* dest, unsigned size, bool printTime);
 
     template <typename T>
