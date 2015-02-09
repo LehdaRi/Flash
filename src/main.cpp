@@ -58,7 +58,7 @@ public:
 
 int main(void) {
     // Create an SFML window
-    sf::RenderWindow window(sf::VideoMode(1024, 800), "SFML window");
+    sf::RenderWindow window(sf::VideoMode(1024, 200), "SFML window");
     window.setFramerateLimit(60);    
 
     // Vectors for samples, F-transform, and spectrums
@@ -80,7 +80,7 @@ int main(void) {
 
     // Start recording
     ChunkRecorder recorder;
-    recorder.start(16385); // 16385
+    recorder.start(32770); // 16385, 32770
 
     while (window.isOpen())
     {
@@ -95,7 +95,8 @@ int main(void) {
 
         samplesVect = recorder.getChunk(); // Get a chunk of samples from the mic
         chunkSize = samplesVect.size();
-        paddedChunkSize = pow(2, ceil(log2(chunkSize))); // Round to next highest power of 2 for added granularity
+        paddedChunkSize = pow(2, ceil(log2(chunkSize))); // Round to next highest power of 2
+        //std::cout << chunkSize << " " << paddedChunkSize << std::endl;
 
         if(chunkSize > 0) {
 
@@ -103,27 +104,29 @@ int main(void) {
             samplesVect.resize(paddedChunkSize, 0); // This MUST be padded with zeroes!
             chunkFourierVect.resize(paddedChunkSize);
             chunkAmpSpectVect.resize(paddedChunkSize);
-            chunkPhaseSpectVect.resize(paddedChunkSize);
+            //chunkPhaseSpectVect.resize(paddedChunkSize);
 
-            // Create pointers
+            // Assign pointers
             samples = &samplesVect[0];
             chunkFourier = &chunkFourierVect[0];
             chunkAmpSpect = &chunkAmpSpectVect[0];
-            chunkPhaseSpect = &chunkPhaseSpectVect[0];
+            //chunkPhaseSpect = &chunkPhaseSpectVect[0];
 
             // Do the F-transform
             Fourier::FFT(samples, chunkFourier, paddedChunkSize, false, 1);
-            /*
-            Get amplitudes and phases for each sinusoid. Because of symmetry, we can discard the second half.
-            Zooming to the first fourth reveals the interesting stuff.
-            */
-            Fourier::getSpectrum(chunkFourier, chunkAmpSpect, chunkPhaseSpect, paddedChunkSize/2, true);
+            //Get amplitudes and phases for each sinusoid. Because of symmetry, we can discard the second half.
+            Fourier::getAmpSpectrum(chunkFourier, chunkAmpSpect, paddedChunkSize/2, true);
+
+            /*for(auto val : chunkAmpSpectVect) {
+                std::cout << val << std::endl;
+            }*/
 
             // Get the graph
-            chunkAmpSpectGraph = getGraph(chunkAmpSpect, paddedChunkSize, 0, 750, 1.0f, 4.0f);
+            chunkAmpSpectGraph = getGraph(chunkAmpSpect, paddedChunkSize, 0, 200, 0.5f, 1.0f);
 
             // Draw
             window.clear();
+            //window.draw(borders);
             window.draw(chunkAmpSpectGraph);
         }
 
